@@ -63,14 +63,22 @@ func handleConnection(conn net.Conn) {
 
 func handleMessage(conn net.Conn, msg string) {
   if strings.HasPrefix(msg, ECHO) {
-    echoMsg := msg[len(ECHO):]
-    fmt.Printf("Received msg: %s (length: %d)%s", echoMsg, len(echoMsg), CRLF)
-    conn.Write([]byte(echoMsg + CRLF))
+    echo(conn, msg)
   } else if strings.HasPrefix(msg, TIME) {
-    time :=  time.Now().String()
-    conn.Write([]byte(time + CRLF))
-    fmt.Println("Current cerver time: ", time)
+    showTime(conn, msg)
   } else if strings.HasPrefix(msg, CLOSE) {
     conn.Close()
   }
+}
+
+func echo(conn net.Conn, msg string) {
+  echoMsg := msg[len(ECHO):]
+  fmt.Printf("Received msg: %s (length: %d)%s", echoMsg, len(echoMsg), CRLF)
+  conn.Write([]byte(echoMsg + CRLF))
+}
+
+func showTime(conn net.Conn, msg string) {
+  time :=  time.Now().String()
+  conn.Write([]byte(time + CRLF))
+  fmt.Println("Current cerver time: ", time)
 }
