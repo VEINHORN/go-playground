@@ -4,46 +4,73 @@ import (
   "os"
   "fmt"
   "net"
+  "strings"
+  "time"
 )
 
 const (
   CONN_TYPE = "tcp"
   CONN_HOST = "0.0.0.0"
   CONN_PORT = "5555"
+  ECHO = "ECHO"
+  TIME = "TIME"
+  CLOSE = "CLOSE"
+  CRLF = "\r\n"
 )
 
 func main() {
-  fmt.Println("Launching server...")
-  ln, err := net.Listen(CONN_TYPE, CONN_HOST + ":" + CONN_PORT)
+  fmt.Printf("Server launched on %s:%s\n", CONN_HOST, CONN_PORT)
+  listener, err := net.Listen(CONN_TYPE, CONN_HOST + ":" + CONN_PORT)
 
   if err != nil {
     fmt.Println("Listen error")
     os.Exit(1)
   }
+
+  defer listener.Close();
+
   for {
-    conn, err := ln.Accept()
+    conn, err := listener.Accept()
     if err != nil {
       fmt.Println("Accept error")
       os.Exit(1)
     }
+    fmt.Println("New connection created.")
     handleConnection(conn)
   }
 }
 
 func handleConnection(conn net.Conn) {
-  buf := make([]byte, 1024)
-  reqLen, err := conn.Read(buf)
+  for {
+    buf := make([]byte, 1024)
+    reqLen, err := conn.Read(buf)
 
-  if err != nil {
-    fmt.Println("Error reading: ", err.Error())
+    if err != nil {
+      fmt.Println("Connection closed.")
+      return
+    }
+    /*  print without CR LF (13 - carriage return, 10 - new line)
+        fmt.Println(buf[0:reqLen])
+    */
+    if reqLen >= 2 {
+      reqStr := string(buf[:reqLen - 2]) // to string and remove CRLF
+      handleMessage(conn, reqStr)
+    } else {
+      fmt.Println("Cannot convert byte array to string")
+    }
   }
-  fmt.Println(buf[0:reqLen]) // print without CR LF (carriage return, new line)
-  if reqLen >= 2 {
-    reqStr := string(buf[:reqLen - 2])
-    fmt.Printf("Received msg: %s (length: %d)\n", reqStr, len(reqStr))
-  } else {
-    fmt.Println("Cannot convert byte array to string")
-  }
+}
 
-  conn.Close()
+func handleMessage(conn net.Conn, msg string) {
+  if strings.HasPrefix(msg, ECHO) {
+    echoMsg := msg[len(ECHO):]
+    fmt.Printf("Received msg: %s (length: %d)%s", echoMsg, len(echoMsg), CRLF)
+    conn.Write([]byte(echoMsg + CRLF))
+  } else if strings.HasPrefix(msg, TIME) {
+    time :=  time.Now().String()
+    conn.Write([]byte(time + CRLF))
+    fmt.Println("Current cerver time: ", time)
+  } else if strings.HasPrefix(msg, CLOSE) {
+    conn.Close()
+  }
 }
