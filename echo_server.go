@@ -38,8 +38,12 @@ func handleConnection(conn net.Conn) {
     fmt.Println("Error reading: ", err.Error())
   }
   fmt.Println(buf[0:reqLen]) // print without CR LF (carriage return, new line)
-  reqStr := string(buf[:reqLen - 2])
-  fmt.Printf("Received msg: %s (length: %d)", reqStr, len(reqStr))
+  if reqLen >= 2 {
+    reqStr := string(buf[:reqLen - 2])
+    fmt.Printf("Received msg: %s (length: %d)\n", reqStr, len(reqStr))
+  } else {
+    fmt.Println("Cannot convert byte array to string")
+  }
 
   conn.Close()
 }
