@@ -5,31 +5,52 @@ import(
   "os"
   "os/exec"
   "strings"
-  //"net"
+  "net"
+  "bufio"
 )
 
 const(
-  SERVER_IP = "localhost"
+  SERVER_IP = "0.0.0.0"
   SERVER_PORT = "5555"
 )
 
 func main() {
+  conn, err := net.Dial("tcp", SERVER_IP + ":" + SERVER_PORT)
+  if err != nil {
+    fmt.Println("Cannot connect to ", SERVER_IP + ":" + SERVER_PORT)
+  } else {
+    fmt.Println("Connected to ", SERVER_IP + ":" + SERVER_PORT)
+  }
+
   echoCommands()
 
   for {
-    var command string
-    fmt.Print("Enter command: ")
-    fmt.Scanf("%s", &command)
-    handleCommand(command)
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("Enter command:")
+    command, _ := reader.ReadString('\n')
+
+    // fmt.Printf("Entered command: %s (length: %s)\n", command, len(command))
+    result := handleCommand(conn, command)
+    if result == 1 {
+      break
+    }
   }
 }
 
-func handleCommand(command string) {
+func handleCommand(conn net.Conn, command string) int {
   if strings.HasPrefix(command, "CLEAR") {
     clearScreen()
   } else if strings.HasPrefix(command, "ECHO") {
-    fmt.Println("yo")
+    //fmt.Println("Msg: ", msg)
+
+    _, err := conn.Write([]byte(command))
+    if err != nil {
+      fmt.Println("Cannot send data to server. Error: ", err.Error())
+    }
+  } else if strings.HasPrefix(command, "EXIT") {
+    return 1
   }
+  return 0
 }
 
 func clearScreen() {
@@ -46,4 +67,5 @@ func echoCommands() {
   fmt.Println("4. UPLOAD <filename>")
   fmt.Println("5. DOWNLOAD ")
   fmt.Println("6. CLEAR (clear screen)")
+  fmt.Println("7. EXIT")
 }

@@ -27,7 +27,7 @@ func main() {
     os.Exit(1)
   }
 
-  defer listener.Close();
+  defer listener.Close(); // what is that gigle
 
   for {
     conn, err := listener.Accept()
@@ -53,6 +53,7 @@ func handleConnection(conn net.Conn) {
         fmt.Println(buf[0:reqLen])
     */
     if reqLen >= 2 {
+      //fmt.Println(string(buf))
       reqStr := string(buf[:reqLen - 2]) // to string and remove CRLF
       handleMessage(conn, reqStr)
     } else {
