@@ -67,20 +67,35 @@ func handleCommand(conn net.Conn, command string) int {
     }
     fmt.Print(string(buf))
   } else if strings.HasPrefix(command, "UPLOAD") {
-    msg := command[:len(command) - 1] + "\r\n"
-    _, err := conn.Write([]byte(msg))
-    if err != nil {
-      fmt.Println("Cannot send data to server. Error: ", err.Error())
-    }
-    buf := make([]byte, 1024)
-    _, error := conn.Read(buf)
-    if error != nil {
-      fmt.Println("Connection closed.")
-      return 0
-    }
-    fmt.Print(string(buf))
+    return uploadFile(conn, command)
   } else if strings.HasPrefix(command, "EXIT") {
     return 1
+  }
+  return 0
+}
+
+func uploadFile(conn net.Conn, command string) int {
+  msg := command[:len(command) - 1] + "\r\n"
+  _, err := conn.Write([]byte(msg))
+  if err != nil {
+    fmt.Println("Cannot send data to server. Error: ", err.Error())
+  }
+  buf := make([]byte, 1024)
+  _, error := conn.Read(buf)
+  if error != nil {
+    fmt.Println("Connection closed.")
+  }
+  fmt.Print(string(buf))
+  for i := 0; i < 15; i++ {
+    _, e := conn.Write(buf)
+    if e != nil {
+      fmt.Println("Cannot send chunk of file")
+    }
+  }
+
+  _, er := conn.Write([]byte("eof_command"))
+  if er != nil {
+    fmt.Println("Cannot send eof command.")
   }
   return 0
 }

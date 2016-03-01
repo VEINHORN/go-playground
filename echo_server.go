@@ -6,7 +6,7 @@ import (
   "net"
   "strings"
   "time"
-  "io/ioutil"
+  "bufio"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
   CLOSE = "CLOSE"
   UPLOAD = "UPLOAD"
   CRLF = "\r\n"
-  SERVER_FOLDER = "server_data"
+  SERVER_FOLDER = "server_data/"
 )
 
 func main() {
@@ -78,14 +78,57 @@ func handleMessage(conn net.Conn, msg string) {
 }
 
 func uploadFile(conn net.Conn, msg string) {
-  fileName := msg[len(UPLOAD) + 1:] + "yo"
-  err := ioutil.WriteFile(SERVER_FOLDER + fileName, []byte("yo nigga yo"), 0644)
+  fileName := msg[len(UPLOAD) + 1:]
+  // remove from filenaName / user may try download secur files
+  file, err := os.OpenFile(SERVER_FOLDER + fileName,
+    os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+  check(err)
+  writer := bufio.NewWriter(file)
+
+  _, error := conn.Write([]byte("ready" + CRLF))
+  if error != nil {
+    fmt.Println("Cannot send ready flag. File uploading is aborted.")
+  } else { // start accept file chunks from client
+    for {
+      buf := make([]byte, 1024)
+      l, e := conn.Read(buf)
+      if e != nil { // exit from loop, cause file uploading is aborted
+        fmt.Println("Cannot receive some file chunks. File uploading is aborted.")
+        break
+      }
+      fmt.Printf("Received %d bytes\n", l)
+
+      command := string(buf[0:20]) // get command to return from loop
+      if strings.HasPrefix(command, "eof_command") {
+        fmt.Printf("File %s is uploaded.\n", fileName)
+        break
+      } else {
+        writer.Write(buf)
+      }
+      // fmt.Println()
+
+      // check type of received data
+      //command := string(buf[:20]) // convert byte arr to string
+      //fmt.Printf("Command: %s (length: %d)", buf[:20], len(command))
+
+      /*if strings.HasPrefix(command, " eof_command") {
+        fmt.Printf("File %s is uploaded.\n", fileName)
+        break
+        // send to client that file is uploaded
+      } else {
+
+      }*/
+    }
+  }
+  writer.Flush()
+  /*
+  err := ioutil.WriteFile(SERVER_FOLDER + fileName, []byte("some data"), 0644)
   if err != nil {
     fmt.Printf("Cannot create %s file", fileName)
   } else {
     conn.Write([]byte(fileName + CRLF))
     fmt.Println("Uploading ", fileName)
-  }
+  }*/
 }
 
 func echo(conn net.Conn, msg string) {
@@ -98,4 +141,10 @@ func showTime(conn net.Conn, msg string) {
   time :=  time.Now().String()
   conn.Write([]byte(time + CRLF))
   fmt.Println("Current cerver time: ", time)
+}
+
+func check(e error) {
+  if e != nil {
+    panic(e)
+  }
 }
