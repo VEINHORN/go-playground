@@ -26,7 +26,7 @@ func main() {
 
   for {
     reader := bufio.NewReader(os.Stdin)
-    fmt.Print("Enter command:")
+    fmt.Print("Enter command: ")
     command, _ := reader.ReadString('\n')
 
     // fmt.Printf("Entered command: %s (length: %s)\n", command, len(command))
@@ -41,12 +41,44 @@ func handleCommand(conn net.Conn, command string) int {
   if strings.HasPrefix(command, "CLEAR") {
     clearScreen()
   } else if strings.HasPrefix(command, "ECHO") {
-    //fmt.Println("Msg: ", msg)
-
-    _, err := conn.Write([]byte(command))
+    msg := command[:len(command) - 1] + "\r\n"
+    _, err := conn.Write([]byte(msg))
     if err != nil {
       fmt.Println("Cannot send data to server. Error: ", err.Error())
     }
+    buf := make([]byte, 1024)
+    _, error := conn.Read(buf)
+    if error != nil {
+      fmt.Println("Connection closed.")
+      return 0
+    }
+    fmt.Print(string(buf))
+  } else if strings.HasPrefix(command, "TIME") {
+    msg := command[:len(command) - 1] + "\r\n"
+    _, err := conn.Write([]byte(msg))
+    if err != nil {
+      fmt.Println("Cannot send data to server. Error: ", err.Error())
+    }
+    buf := make([]byte, 1024)
+    _, error := conn.Read(buf)
+    if error != nil {
+      fmt.Println("Connection closed.")
+      return 0
+    }
+    fmt.Print(string(buf))
+  } else if strings.HasPrefix(command, "UPLOAD") {
+    msg := command[:len(command) - 1] + "\r\n"
+    _, err := conn.Write([]byte(msg))
+    if err != nil {
+      fmt.Println("Cannot send data to server. Error: ", err.Error())
+    }
+    buf := make([]byte, 1024)
+    _, error := conn.Read(buf)
+    if error != nil {
+      fmt.Println("Connection closed.")
+      return 0
+    }
+    fmt.Print(string(buf))
   } else if strings.HasPrefix(command, "EXIT") {
     return 1
   }
@@ -67,5 +99,5 @@ func echoCommands() {
   fmt.Println("4. UPLOAD <filename>")
   fmt.Println("5. DOWNLOAD ")
   fmt.Println("6. CLEAR (clear screen)")
-  fmt.Println("7. EXIT")
+  fmt.Println("7. EXIT (close client)")
 }

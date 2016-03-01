@@ -6,6 +6,7 @@ import (
   "net"
   "strings"
   "time"
+  "io/ioutil"
 )
 
 const (
@@ -15,7 +16,9 @@ const (
   ECHO = "ECHO"
   TIME = "TIME"
   CLOSE = "CLOSE"
+  UPLOAD = "UPLOAD"
   CRLF = "\r\n"
+  SERVER_FOLDER = "server_data"
 )
 
 func main() {
@@ -69,11 +72,24 @@ func handleMessage(conn net.Conn, msg string) {
     showTime(conn, msg)
   } else if strings.HasPrefix(msg, CLOSE) {
     conn.Close()
+  } else if strings.HasPrefix(msg, UPLOAD) {
+    uploadFile(conn, msg)
+  }
+}
+
+func uploadFile(conn net.Conn, msg string) {
+  fileName := msg[len(UPLOAD) + 1:] + "yo"
+  err := ioutil.WriteFile(SERVER_FOLDER + fileName, []byte("yo nigga yo"), 0644)
+  if err != nil {
+    fmt.Printf("Cannot create %s file", fileName)
+  } else {
+    conn.Write([]byte(fileName + CRLF))
+    fmt.Println("Uploading ", fileName)
   }
 }
 
 func echo(conn net.Conn, msg string) {
-  echoMsg := msg[len(ECHO):]
+  echoMsg := msg[len(ECHO) + 1:] // fix slice out of bound error here
   fmt.Printf("Received msg: %s (length: %d)%s", echoMsg, len(echoMsg), CRLF)
   conn.Write([]byte(echoMsg + CRLF))
 }
