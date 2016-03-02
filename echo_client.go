@@ -12,6 +12,8 @@ import(
 const(
   SERVER_IP = "0.0.0.0"
   SERVER_PORT = "5555"
+  CRLF = "\r\n"
+  BUF_SIZE = 1024
 )
 
 func main() {
@@ -41,31 +43,9 @@ func handleCommand(conn net.Conn, command string) int {
   if strings.HasPrefix(command, "CLEAR") {
     clearScreen()
   } else if strings.HasPrefix(command, "ECHO") {
-    msg := command[:len(command) - 1] + "\r\n"
-    _, err := conn.Write([]byte(msg))
-    if err != nil {
-      fmt.Println("Cannot send data to server. Error: ", err.Error())
-    }
-    buf := make([]byte, 1024)
-    _, error := conn.Read(buf)
-    if error != nil {
-      fmt.Println("Connection closed.")
-      return 0
-    }
-    fmt.Print(string(buf))
+    sendMessage(conn, command)
   } else if strings.HasPrefix(command, "TIME") {
-    msg := command[:len(command) - 1] + "\r\n"
-    _, err := conn.Write([]byte(msg))
-    if err != nil {
-      fmt.Println("Cannot send data to server. Error: ", err.Error())
-    }
-    buf := make([]byte, 1024)
-    _, error := conn.Read(buf)
-    if error != nil {
-      fmt.Println("Connection closed.")
-      return 0
-    }
-    fmt.Print(string(buf))
+    sendMessage(conn, command)
   } else if strings.HasPrefix(command, "UPLOAD") {
     return uploadFile(conn, command)
   } else if strings.HasPrefix(command, "EXIT") {
@@ -74,13 +54,28 @@ func handleCommand(conn net.Conn, command string) int {
   return 0
 }
 
-func uploadFile(conn net.Conn, command string) int {
-  msg := command[:len(command) - 1] + "\r\n"
+func sendMessage(conn net.Conn, command string) {
+  msg := command[:len(command) - 1] + CRLF
   _, err := conn.Write([]byte(msg))
   if err != nil {
     fmt.Println("Cannot send data to server. Error: ", err.Error())
   }
-  buf := make([]byte, 1024)
+  buf := make([]byte, BUF_SIZE)
+  _, error := conn.Read(buf)
+  if error != nil {
+    fmt.Println("Connection closed.")
+    return
+  }
+  fmt.Print(string(buf))
+}
+
+func uploadFile(conn net.Conn, command string) int {
+  msg := command[:len(command) - 1] + CRLF
+  _, err := conn.Write([]byte(msg))
+  if err != nil {
+    fmt.Println("Cannot send data to server. Error: ", err.Error())
+  }
+  buf := make([]byte, BUF_SIZE)
   _, error := conn.Read(buf)
   if error != nil {
     fmt.Println("Connection closed.")

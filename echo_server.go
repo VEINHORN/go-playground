@@ -18,6 +18,7 @@ const (
   CLOSE = "CLOSE"
   UPLOAD = "UPLOAD"
   CRLF = "\r\n"
+  BUF_SIZE = 1024
   SERVER_FOLDER = "server_data/"
 )
 
@@ -45,7 +46,7 @@ func main() {
 
 func handleConnection(conn net.Conn) {
   for {
-    buf := make([]byte, 1024)
+    buf := make([]byte, BUF_SIZE)
     reqLen, err := conn.Read(buf)
 
     if err != nil {
@@ -90,7 +91,7 @@ func uploadFile(conn net.Conn, msg string) {
     fmt.Println("Cannot send ready flag. File uploading is aborted.")
   } else { // start accept file chunks from client
     for {
-      buf := make([]byte, 1024)
+      buf := make([]byte, BUF_SIZE)
       l, e := conn.Read(buf)
       if e != nil { // exit from loop, cause file uploading is aborted
         fmt.Println("Cannot receive some file chunks. File uploading is aborted.")
